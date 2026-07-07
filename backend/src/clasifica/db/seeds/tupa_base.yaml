@@ -1,0 +1,110 @@
+# Catálogo TUPA base — Municipalidades Distritales del Perú (Ley 27972)
+# Seed inicial editable vía UI.
+
+areas:
+  # Órganos de gobierno
+  - {codigo: ALD, nombre: "Alcaldía", padre: null, tipo: gobierno, orden: 1}
+  - {codigo: CCM, nombre: "Concejo Municipal", padre: null, tipo: gobierno, orden: 2}
+  # Alta dirección y órganos básicos
+  - {codigo: GRM, nombre: "Gerencia Municipal", padre: ALD, tipo: direccion, orden: 3}
+  - {codigo: OCI, nombre: "Órgano de Auditoría Interna", padre: ALD, tipo: control, orden: 4}
+  - {codigo: PPM, nombre: "Procuraduría Pública Municipal", padre: ALD, tipo: asesoria, orden: 5}
+  - {codigo: ASJ, nombre: "Oficina de Asesoría Jurídica", padre: GRM, tipo: asesoria, orden: 6}
+  - {codigo: PLP, nombre: "Oficina de Planeamiento y Presupuesto", padre: GRM, tipo: asesoria, orden: 7}
+  - {codigo: SGE, nombre: "Secretaría General", padre: GRM, tipo: apoyo, orden: 8}
+  - {codigo: OTD, nombre: "Oficina de Trámite Documentario y Archivo", padre: GRM, tipo: apoyo, orden: 9}
+  - {codigo: OTI, nombre: "Oficina de Tecnologías de la Información", padre: GRM, tipo: apoyo, orden: 10}
+  - {codigo: OCO, nombre: "Oficina de Comunicaciones e Imagen", padre: GRM, tipo: apoyo, orden: 11}
+  # Gerencias de línea
+  - {codigo: GAF, nombre: "Gerencia de Administración y Finanzas", padre: GRM, tipo: linea, orden: 12}
+  - {codigo: GIT, nombre: "Gerencia de Infraestructura y Desarrollo Territorial", padre: GRM, tipo: linea, orden: 13}
+  - {codigo: GDE, nombre: "Gerencia de Desarrollo Económico", padre: GRM, tipo: linea, orden: 14}
+  - {codigo: GDS, nombre: "Gerencia de Desarrollo Social", padre: GRM, tipo: linea, orden: 15}
+  - {codigo: GSP, nombre: "Gerencia de Servicios Públicos", padre: GRM, tipo: linea, orden: 16}
+  - {codigo: GAM, nombre: "Gerencia de Gestión Ambiental", padre: GRM, tipo: linea, orden: 17}
+  - {codigo: GAT, nombre: "Gerencia de Administración Tributaria", padre: GRM, tipo: linea, orden: 18}
+  - {codigo: GSC, nombre: "Gerencia de Seguridad Ciudadana", padre: GRM, tipo: linea, orden: 19}
+  - {codigo: GPI, nombre: "Gerencia de Obras / Proyectos de Inversión", padre: GRM, tipo: linea, orden: 20}
+  - {codigo: GTR, nombre: "Gerencia de Transporte Público", padre: GRM, tipo: linea, orden: 21}
+  # Subgerencias
+  - {codigo: ORH, nombre: "Oficina de Recursos Humanos", padre: GAF, tipo: apoyo, orden: 22}
+  - {codigo: SCT, nombre: "Subgerencia de Contabilidad", padre: GAF, tipo: apoyo, orden: 23}
+  - {codigo: STE, nombre: "Subgerencia de Tesorería", padre: GAF, tipo: apoyo, orden: 24}
+  - {codigo: SLO, nombre: "Subgerencia de Logística y Abastecimiento", padre: GAF, tipo: apoyo, orden: 25}
+  - {codigo: SCA, nombre: "Subgerencia de Catastro", padre: GIT, tipo: apoyo, orden: 26}
+  - {codigo: SHU, nombre: "Subgerencia de Habilitaciones Urbanas", padre: GIT, tipo: apoyo, orden: 27}
+  - {codigo: SLC, nombre: "Subgerencia de Licencias de Construcción", padre: GIT, tipo: apoyo, orden: 28}
+  - {codigo: SDB, nombre: "Subgerencia de Desarrollo Urbano", padre: GIT, tipo: apoyo, orden: 29}
+  - {codigo: SDEL, nombre: "Subgerencia de Desarrollo Económico Local", padre: GDE, tipo: apoyo, orden: 30}
+  - {codigo: SCM, nombre: "Subgerencia de Comercialización y Mercados", padre: GDE, tipo: apoyo, orden: 31}
+  - {codigo: STU, nombre: "Subgerencia de Turismo", padre: GDE, tipo: apoyo, orden: 32}
+  - {codigo: SED, nombre: "Subgerencia de Educación", padre: GDS, tipo: apoyo, orden: 33}
+  - {codigo: SCU, nombre: "Subgerencia de Cultura", padre: GDS, tipo: apoyo, orden: 34}
+  - {codigo: SDE, nombre: "Subgerencia de Deporte y Recreación", padre: GDS, tipo: apoyo, orden: 35}
+  - {codigo: SPS, nombre: "Subgerencia de Programas Sociales", padre: GDS, tipo: apoyo, orden: 36}
+  - {codigo: SLI, nombre: "Subgerencia de Limpieza Pública", padre: GSP, tipo: apoyo, orden: 37}
+  - {codigo: SPJ, nombre: "Subgerencia de Parques y Jardines", padre: GSP, tipo: apoyo, orden: 38}
+  - {codigo: SCE, nombre: "Subgerencia de Cementerio", padre: GSP, tipo: apoyo, orden: 39}
+  - {codigo: STR, nombre: "Subgerencia de Tributación y Rentas", padre: GAT, tipo: apoyo, orden: 40}
+  - {codigo: SFI, nombre: "Subgerencia de Fiscalización Tributaria", padre: GAT, tipo: apoyo, orden: 41}
+  - {codigo: SMA, nombre: "Subgerencia de Medio Ambiente", padre: GAM, tipo: apoyo, orden: 42}
+  - {codigo: SSA, nombre: "Subgerencia de Saneamiento y Salud Ambiental", padre: GAM, tipo: apoyo, orden: 43}
+  # Unidades especiales
+  - {codigo: DMN, nombre: "DEMUNA", padre: GDS, tipo: especial, orden: 44}
+  - {codigo: OMP, nombre: "OMAPED", padre: GDS, tipo: especial, orden: 45}
+  - {codigo: CIM, nombre: "Centro de Emergencia Mujer", padre: GSC, tipo: especial, orden: 46}
+
+tipos:
+  # Gestión interna
+  - {codigo: INF, nombre: "Informe", area_tipica: GRM, descripcion: "Comunica información a un superior. Encabezado INFORME.", palabras_clave: [informe, cumplo con informar]}
+  - {codigo: INT, nombre: "Informe Técnico", area_tipica: GIT, descripcion: "Informe técnico con conclusiones.", palabras_clave: [informe tecnico]}
+  - {codigo: INL, nombre: "Informe Legal", area_tipica: ASJ, descripcion: "Informe jurídico-legal.", palabras_clave: [informe legal]}
+  - {codigo: MEM, nombre: "Memorando", area_tipica: GRM, descripcion: "Comunicación interna. Encabezado MEMORANDO.", palabras_clave: [memorando]}
+  - {codigo: MEC, nombre: "Memorando Múltiple/Circular", area_tipica: GRM, descripcion: "Memorando a varios destinatarios.", palabras_clave: [memorando multiple, circular]}
+  - {codigo: OFI, nombre: "Oficio", area_tipica: GRM, descripcion: "Comunicación oficial a entidades. Encabezado OFICIO.", palabras_clave: [oficio]}
+  - {codigo: OFC, nombre: "Oficio Circular", area_tipica: GRM, descripcion: "Oficio a múltiples destinatarios.", palabras_clave: [oficio circular]}
+  - {codigo: CAR, nombre: "Carta", area_tipica: GRM, descripcion: "Comunicación formal a particulares.", palabras_clave: [carta]}
+  - {codigo: NOT, nombre: "Nota", area_tipica: GRM, descripcion: "Comunicación breve.", palabras_clave: [nota]}
+  - {codigo: PRO, nombre: "Proveído / Providencia", area_tipica: GRM, descripcion: "Resolución de trámite.", palabras_clave: [proveido, providencia]}
+  - {codigo: DIC, nombre: "Dictamen", area_tipica: ASJ, descripcion: "Opinión técnico-legal.", palabras_clave: [dictamen]}
+  # Actos administrativos
+  - {codigo: ORD, nombre: "Ordenanza", area_tipica: ALD, descripcion: "Norma de mayor jerarquía. Encabezado ORDENANZA.", palabras_clave: [ordenanza]}
+  - {codigo: ACC, nombre: "Acuerdo de Concejo", area_tipica: CCM, descripcion: "Decisión del Concejo.", palabras_clave: [acuerdo de concejo]}
+  - {codigo: DAL, nombre: "Decreto de Alcaldía", area_tipica: ALD, descripcion: "Encabezado DECRETO DE ALCALDIA.", palabras_clave: [decreto de alcaldia]}
+  - {codigo: RAL, nombre: "Resolución de Alcaldía", area_tipica: ALD, descripcion: "Encabezado RESOLUCION DE ALCALDIA.", palabras_clave: [resolucion de alcaldia]}
+  - {codigo: RGM, nombre: "Resolución de Gerencia Municipal", area_tipica: GRM, descripcion: "Acto del Gerente Municipal.", palabras_clave: [resolucion de gerencia municipal]}
+  - {codigo: RGE, nombre: "Resolución de Gerencia", area_tipica: GAF, descripcion: "Acto de un Gerente de línea.", palabras_clave: [resolucion de gerencia]}
+  # TUPA
+  - {codigo: LFN, nombre: "Licencia de Funcionamiento", area_tipica: GDE, descripcion: "Autorización de actividad económica.", palabras_clave: [licencia de funcionamiento]}
+  - {codigo: LED, nombre: "Licencia de Edificación", area_tipica: GIT, descripcion: "Autorización de obra.", palabras_clave: [licencia de edificacion, licencia de obra]}
+  - {codigo: LDM, nombre: "Licencia de Demolición", area_tipica: GIT, descripcion: "Autorización de demolición.", palabras_clave: [demolicion]}
+  - {codigo: LOM, nombre: "Licencia de Obra Menor", area_tipica: GIT, descripcion: "Obras menores.", palabras_clave: [obra menor]}
+  - {codigo: HUR, nombre: "Habilitación Urbana", area_tipica: GIT, descripcion: "Habilitar terreno urbano.", palabras_clave: [habilitacion urbana]}
+  - {codigo: CPU, nombre: "Certificado de Parámetros Urbanísticos", area_tipica: GIT, descripcion: "Parámetros urbanísticos.", palabras_clave: [parametros urbanisticos]}
+  - {codigo: CZO, nombre: "Certificado de Zonificación", area_tipica: GIT, descripcion: "Zonificación vigente.", palabras_clave: [zonificacion]}
+  - {codigo: CCU, nombre: "Certificado de Compatibilidad de Uso", area_tipica: GIT, descripcion: "Compatibilidad de uso.", palabras_clave: [compatibilidad de uso]}
+  - {codigo: CPO, nombre: "Constancia de Posesión", area_tipica: GIT, descripcion: "Posesión de predio.", palabras_clave: [constancia de posesion]}
+  - {codigo: CNU, nombre: "Certificado de Numeración", area_tipica: GIT, descripcion: "Numeración de predio.", palabras_clave: [certificado de numeracion]}
+  - {codigo: VPL, nombre: "Visación de Planos", area_tipica: GIT, descripcion: "Visado de planos.", palabras_clave: [visacion de planos]}
+  - {codigo: COB, nombre: "Conformidad de Obra", area_tipica: GIT, descripcion: "Obra conforme al proyecto.", palabras_clave: [conformidad de obra]}
+  - {codigo: DFA, nombre: "Declaratoria de Fábrica", area_tipica: GIT, descripcion: "Inscripción de edificación.", palabras_clave: [declaratoria de fabrica]}
+  - {codigo: AAN, nombre: "Autorización de Anuncios", area_tipica: GAT, descripcion: "Anuncios publicitarios.", palabras_clave: [anuncio publicitario]}
+  - {codigo: AVP, nombre: "Autorización de Uso de Vía Pública", area_tipica: GAT, descripcion: "Uso de vía pública.", palabras_clave: [uso de via publica]}
+  - {codigo: PEV, nombre: "Permiso de Evento Público", area_tipica: GSC, descripcion: "Eventos en vía pública.", palabras_clave: [evento publico, espectaculo]}
+  - {codigo: CNA, nombre: "Constancia de No Adeudo", area_tipica: GAT, descripcion: "No adeudo tributario.", palabras_clave: [no adeudo]}
+  - {codigo: DJP, nombre: "Declaración Jurada de Predio", area_tipica: GAT, descripcion: "Autoavalúo de predio.", palabras_clave: [declaracion jurada predio, autoavaluo]}
+  # Ciudadanos
+  - {codigo: SOL, nombre: "Solicitud", area_tipica: OTD, descripcion: "Petición del ciudadano.", palabras_clave: [solicito, solicitud]}
+  - {codigo: DEN, nombre: "Denuncia", area_tipica: GSC, descripcion: "Comunicación de hecho ilícito.", palabras_clave: [denuncia]}
+  - {codigo: REC, nombre: "Reclamo", area_tipica: OTD, descripcion: "Disconformidad con servicio.", palabras_clave: [reclamo]}
+  - {codigo: QUE, nombre: "Queja", area_tipica: OCI, descripcion: "Queja contra servidor.", palabras_clave: [queja]}
+  - {codigo: ACCS, nombre: "Acceso a Información Pública", area_tipica: OTD, descripcion: "Ley 27806.", palabras_clave: [acceso a la informacion]}
+  # Gobierno / actas
+  - {codigo: ASC, nombre: "Acta de Sesión de Concejo", area_tipica: CCM, descripcion: "Acta de sesión del Concejo.", palabras_clave: [acta de sesion]}
+  - {codigo: ACM, nombre: "Acta de Comisión", area_tipica: CCM, descripcion: "Acta de comisión regidoral.", palabras_clave: [acta de comision]}
+  - {codigo: ATR, nombre: "Acta de Trabajo", area_tipica: GAF, descripcion: "Acta de reunión de trabajo.", palabras_clave: [acta de trabajo]}
+  # Contratos / control
+  - {codigo: CON, nombre: "Contrato", area_tipica: GAF, descripcion: "Contrato de servicios/obra/suministro.", palabras_clave: [contrato]}
+  - {codigo: CVN, nombre: "Convenio", area_tipica: ALD, descripcion: "Convenio con otra entidad.", palabras_clave: [convenio]}
+  - {codigo: ORDP, nombre: "Orden de Pago/Compra/Servicio", area_tipica: GAF, descripcion: "Orden de pago o adquisición.", palabras_clave: [orden de compra, orden de servicio, orden de pago]}
+  - {codigo: OTRO, nombre: "Otro", area_tipica: GRM, descripcion: "Documento que no encaja en otros tipos.", palabras_clave: []}
