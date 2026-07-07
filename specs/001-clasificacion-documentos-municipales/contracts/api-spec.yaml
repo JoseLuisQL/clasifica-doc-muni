@@ -1,0 +1,752 @@
+openapi: 3.1.0
+info:
+  title: ClasificaDocMuni API
+  version: 1.0.0
+  description: |
+    API REST del sistema de clasificación automática de documentos
+    municipales. Autenticación JWT Bearer.
+  contact:
+    name: ClasificaDocMuni
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+
+  /auth/refresh:
+    post:
+      summary: Refrescar token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+
+  /documents:
+    post:
+      summary: Subir un documento (carga individual)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: '#/components/schemas/UploadRequest' }
+      responses:
+        '201':
+          description: Documento aceptado y encolado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Document' }
+    get:
+      summary: Listar documentos
+      parameters:
+        - in: query
+          name: estado
+          schema: { type: string }
+        - in: query
+          name: area
+          schema: { type: string }
+        - in: query
+          name: tipo
+          schema: { type: string }
+        - in: query
+          name: anio
+          schema: { type: integer }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedDocuments' }
+
+  /documents/{id}:
+    get:
+      summary: Obtener detalle de un documento
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Document' }
+
+  /documents/{id}/events:
+    get:
+      summary: Obtener log de eventos de un documento
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Event' }
+
+  /documents/{id}/classify:
+    post:
+      summary: Re-clasificar un documento (manual o reprocesar LLM)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClassifyRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Document' }
+
+  /documents/{id}/preview:
+    get:
+      summary: Descargar/preview del PDF original
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: PDF binario
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+
+  /documents/search:
+    get:
+      summary: Búsqueda inteligente (híbrida full-text + semántica + facetada)
+      description: |
+        Combina búsqueda full-text (tsvector español + trigramas) y
+        semántica (embeddings pgvector). El parámetro `modo` controla la
+        ponderación: `híbrido` (default), `exacto` (solo keyword),
+        `semántico` (solo similitud coseno). Filtros facetados opcionales.
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+          description: Texto de búsqueda (asunto, contenido OCR, concepto)
+        - in: query
+          name: modo
+          schema:
+            type: string
+            enum: [hibrido, exacto, semantico]
+            default: hibrido
+        - in: query
+          name: area
+          schema: { type: string }
+        - in: query
+          name: tipo
+          schema: { type: string }
+        - in: query
+          name: anio
+          schema: { type: integer }
+        - in: query
+          name: fecha_desde
+          schema: { type: string, format: date }
+        - in: query
+          name: fecha_hasta
+          schema: { type: string, format: date }
+        - in: query
+          name: confianza_min
+          schema: { type: number, minimum: 0, maximum: 1 }
+        - in: query
+          name: estado
+          schema: { type: string }
+        - in: query
+          name: origen
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedDocuments' }
+
+  /documents/{id}/similar:
+    get:
+      summary: Documentos similares (búsqueda semántica por similitud coseno)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    documento: { $ref: '#/components/schemas/Document' }
+                    similitud: { type: number }
+
+  /search/suggest:
+    get:
+      summary: Autocompletado de asuntos y sugerencias
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asuntos:
+                    type: array
+                    items: { type: string }
+                  areas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        codigo: { type: string }
+                        nombre: { type: string }
+                  tipos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        codigo: { type: string }
+                        nombre: { type: string }
+
+  /documents/review:
+    get:
+      summary: Bandeja de revisión (documentos con estado=revision)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedDocuments' }
+
+  /migration/jobs:
+    post:
+      summary: Crear job de migración masiva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MigrationRequest' }
+      responses:
+        '201':
+          description: Job creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MigrationJob' }
+    get:
+      summary: Listar jobs de migración
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MigrationJob' }
+
+  /migration/jobs/{id}:
+    get:
+      summary: Estado de un job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MigrationJob' }
+
+  /migration/jobs/{id}/pause:
+    post:
+      summary: Pausar job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses: { '200': { description: OK } }
+
+  /migration/jobs/{id}/resume:
+    post:
+      summary: Reanudar job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses: { '200': { description: OK } }
+
+  /exports:
+    post:
+      summary: Exportar selección a ZIP + CSV
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ExportRequest' }
+      responses:
+        '202':
+          description: Exportación encolada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExportJob' }
+
+  /config/areas:
+    get:
+      summary: Listar áreas
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Area' }
+    post:
+      summary: Crear área
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AreaInput' }
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Area' }
+
+  /config/areas/{codigo}:
+    put:
+      summary: Actualizar área
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AreaInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Area' }
+    delete:
+      summary: Desactivar área (soft delete)
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema: { type: string }
+      responses: { '204': { description: OK } }
+
+  /config/tipos:
+    get:
+      summary: Listar tipos documentales
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TipoDocumental' }
+    post:
+      summary: Crear tipo documental
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TipoInput' }
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TipoDocumental' }
+
+  /config/correlativo:
+    get:
+      summary: Obtener configuración de correlativo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CorrelativoConfig' }
+    put:
+      summary: Actualizar configuración de correlativo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorrelativoConfig' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CorrelativoConfig' }
+
+  /config/llm:
+    get:
+      summary: Obtener configuración LLM
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LLMConfig' }
+    put:
+      summary: Actualizar configuración LLM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LLMConfig' }
+      responses:
+        '200':
+          description: OK
+
+  /config/anonimizacion:
+    get:
+      summary: Obtener configuración de anonimización
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnonConfig' }
+    put:
+      summary: Actualizar configuración de anonimización
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AnonConfig' }
+      responses:
+        '200':
+          description: OK
+
+  /config/export:
+    get:
+      summary: Exportar configuración completa como YAML
+      responses:
+        '200':
+          description: YAML
+          content:
+            application/yaml:
+              schema: { type: string }
+    post:
+      summary: Importar configuración desde YAML
+      requestBody:
+        required: true
+        content:
+          application/yaml:
+            schema: { type: string }
+      responses: { '200': { description: OK } }
+
+  /reports/stats:
+    get:
+      summary: Estadísticas generales
+      parameters:
+        - in: query
+          name: desde
+          schema: { type: string, format: date }
+        - in: query
+          name: hasta
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Stats' }
+
+  /health:
+    get:
+      summary: Healthcheck
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password }
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+    TokenPair:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, example: bearer }
+        expires_in: { type: integer }
+    UploadRequest:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+        origen:
+          type: string
+          enum: [interactivo, migracion]
+          default: interactivo
+    Document:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        hash_sha256: { type: string }
+        correlativo: { type: string, nullable: true }
+        estado:
+          type: string
+          enum: [pendiente, procesando, clasificado, revision, error, duplicado]
+        tipo_codigo: { type: string, nullable: true }
+        area_codigo: { type: string, nullable: true }
+        asunto: { type: string, nullable: true }
+        anio_documento: { type: integer, nullable: true }
+        confianza: { type: number, nullable: true }
+        justificacion_llm: { type: string, nullable: true }
+        num_paginas: { type: integer }
+        tamano_bytes: { type: integer }
+        origen: { type: string }
+        cargado_en: { type: string, format: date-time }
+        procesado_en: { type: string, format: date-time, nullable: true }
+    PaginatedDocuments:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Document' }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    Event:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        documento_id: { type: string, format: uuid }
+        tipo: { type: string }
+        timestamp: { type: string, format: date-time }
+        payload: { type: object, additionalProperties: true }
+    ClassifyRequest:
+      type: object
+      properties:
+        reprocesar_llm:
+          type: boolean
+          default: false
+          description: Si true, re-ejecuta el LLM; si false, aplica la corrección manual proporcionada.
+        tipo_codigo: { type: string, nullable: true }
+        area_codigo: { type: string, nullable: true }
+        asunto: { type: string, nullable: true }
+        anio_documento: { type: integer, nullable: true }
+        justificacion_operador: { type: string, nullable: true }
+    MigrationRequest:
+      type: object
+      required: [ruta_origen]
+      properties:
+        ruta_origen: { type: string }
+        prioridad:
+          type: integer
+          default: 5
+    MigrationJob:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        ruta_origen: { type: string }
+        total_documentos: { type: integer }
+        procesados: { type: integer }
+        exitosos: { type: integer }
+        en_revision: { type: integer }
+        erroneos: { type: integer }
+        estado:
+          type: string
+          enum: [encolado, en_curso, pausado, completado, cancelado]
+        iniciado_en: { type: string, format: date-time, nullable: true }
+        finalizado_en: { type: string, format: date-time, nullable: true }
+    ExportRequest:
+      type: object
+      required: [document_ids]
+      properties:
+        document_ids:
+          type: array
+          items: { type: string, format: uuid }
+    ExportJob:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        estado: { type: string }
+        url_descarga: { type: string, nullable: true }
+    Area:
+      type: object
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        padre_codigo: { type: string, nullable: true }
+        activa: { type: boolean }
+        orden: { type: integer }
+    AreaInput:
+      type: object
+      required: [codigo, nombre]
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        padre_codigo: { type: string, nullable: true }
+        orden: { type: integer }
+    TipoDocumental:
+      type: object
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        area_tipica_codigo: { type: string, nullable: true }
+        descripcion: { type: string, nullable: true }
+        palabras_clave:
+          type: array
+          items: { type: string }
+        plantilla_correlativo: { type: string, nullable: true }
+        activo: { type: boolean }
+    TipoInput:
+      type: object
+      required: [codigo, nombre]
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        area_tipica_codigo: { type: string, nullable: true }
+        descripcion: { type: string, nullable: true }
+        palabras_clave:
+          type: array
+          items: { type: string }
+        plantilla_correlativo: { type: string, nullable: true }
+    CorrelativoConfig:
+      type: object
+      properties:
+        plantilla: { type: string, example: '{AREA}-{AÑO}-{TIPO}-{SEQ:04d}' }
+    LLMConfig:
+      type: object
+      properties:
+        endpoint: { type: string }
+        modelo: { type: string }
+        api_key_secret_ref: { type: string }
+        temperatura: { type: number }
+        max_tokens: { type: integer }
+        rate_limit_rpm: { type: integer }
+        timeout_segundos: { type: integer }
+        plantilla_system_prompt: { type: string }
+    AnonConfig:
+      type: object
+      properties:
+        patrones:
+          type: array
+          items:
+            type: object
+            properties:
+              nombre: { type: string }
+              regex: { type: string }
+              contexto:
+                type: array
+                items: { type: string }
+        redactar_firmas: { type: boolean }
+    Stats:
+      type: object
+      properties:
+        total_documentos: { type: integer }
+        por_estado:
+          type: object
+          additionalProperties: { type: integer }
+        por_area:
+          type: object
+          additionalProperties: { type: integer }
+        por_tipo:
+          type: object
+          additionalProperties: { type: integer }
+        precision_estimada: { type: number }
+        migraciones_activas: { type: integer }
