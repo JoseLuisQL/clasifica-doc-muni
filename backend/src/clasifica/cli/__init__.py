@@ -28,8 +28,8 @@ def main() -> None:
 def _migrate(carpeta: str) -> None:
     import uuid
 
-    from clasifica.workers.common import SyncSession
     from clasifica.db.models import JobMigracion, Usuario
+    from clasifica.workers.common import SyncSession
     from clasifica.workers.tasks.batch_migration import batch_migration
 
     with SyncSession() as session:
@@ -43,8 +43,8 @@ def _migrate(carpeta: str) -> None:
 
 
 def _jobs_status() -> None:
-    from clasifica.workers.common import SyncSession
     from clasifica.db.models import JobMigracion
+    from clasifica.workers.common import SyncSession
 
     with SyncSession() as session:
         for j in session.query(JobMigracion).order_by(JobMigracion.iniciado_en.desc().nullslast()).limit(20):

@@ -55,7 +55,6 @@ async def pausar(job_id: uuid.UUID, db: AsyncSession = Depends(get_db), user=Dep
 
 @router.post("/jobs/{job_id}/resume")
 async def reanudar(job_id: uuid.UUID, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)) -> dict:
-    from clasifica.db.models import JobMigracion
 
     result = await _set_estado(db, job_id, "en_curso")
     # Re-encolar para continuar procesando los restantes

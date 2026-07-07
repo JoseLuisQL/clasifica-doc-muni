@@ -1,0 +1,7 @@
+{
+  "informe_gde_001.pdf": {"tipo": "INFORME", "area": "GDE"},
+  "oficio_grm_001.pdf": {"tipo": "OFICIO", "area": "GRM"},
+  "memorando_gaf_001.pdf": {"tipo": "MEMORANDO", "area": "GAF"},
+  "resolucion_alcaldia_001.pdf": {"tipo": "RAL", "area": "ALD"},
+  "licencia_funcionamiento_001.pdf": {"tipo": "LFN", "area": "GDE"}
+}

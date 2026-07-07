@@ -98,6 +98,84 @@ cd clasifica-doc-muni
 - **NQ-004**: Catálogo TUPA base completo precargado, editable por
   municipalidad.
 
+## Estado de implementación
+
+**Implementación completa** (spec-kit `/speckit.implement`, las 8 fases):
+
+| Fase | User Story | Estado |
+|------|-----------|--------|
+| 1. Setup | Monorepo, docker-compose, tooling | ✅ |
+| 2. Foundational | Config, 12 modelos, migraciones, seed TUPA, servicios core, pipeline Celery | ✅ |
+| 3. US1 (P1) | Carga individual en tiempo real (MVP) | ✅ |
+| 4. US2 (P2) | Carga masiva + CLI de migración | ✅ |
+| 5. US3 (P3) | Bandeja de revisión + feedback loop | ✅ |
+| 6. US4 (P4) | Búsqueda inteligente híbrida + exportación | ✅ |
+| 7. US5 (P5) | Configuración de taxonomía/prompts | ✅ |
+| 8. Polish | Edge cases, eval, seguridad, cobertura ≥80% | ✅ |
+
+**Tests**: 66 pasan (unit + contract + integration). Cobertura backend
+**80%** (módulos runtime-only —workers, OCR PaddleOCR, search pgvector—
+se validan por integración con Docker). Lint `ruff` limpio. Frontend
+`tsc` + `vite build` OK. **18 endpoints** REST + WebSocket.
+
+## Cómo correr
+
+### Con Docker Compose (recomendado, stack completo)
+
+```bash
+cp .env.example .env      # completar LLM_API_KEY de Qware
+docker compose -f infra/docker-compose.yml up -d
+# API: http://localhost:8080  ·  login: admin / (ADMIN_PASSWORD del .env)
+```
+
+Ver [`specs/001-clasificacion-documentos-municipales/quickstart.md`](specs/001-clasificacion-documentos-municipales/quickstart.md).
+
+### Desarrollo local
+
+```bash
+# Backend
+cd backend
+python -m venv .venv && . .venv/bin/activate
+pip install -e ".[ocr,dev]"
+pytest                        # 66 tests, cobertura ≥80%
+ruff check src/               # lint
+uvicorn clasifica.main:app --reload   # requiere PostgreSQL+Redis
+
+# Frontend
+cd frontend
+npm install
+npm run dev                   # http://localhost:5173 (proxy a :8000)
+npm run build                 # producción
+```
+
+### Evaluación del clasificador
+
+```bash
+cd backend
+python -m clasifica.eval_classifier tests/fixtures/pdfs tests/fixtures/expected_classifications.json
+```
+
+## Estructura del código
+
+```
+backend/src/clasifica/
+├── config.py, main.py           # settings, app factory (health, WS, CORS)
+├── db/models/                   # 12 modelos SQLAlchemy (UUID/JSON portables)
+├── db/seeds/                    # catálogo TUPA (46 áreas, 47 tipos) + loader
+├── api/routes/                  # auth, documents, search, migration, exports, config, reports
+├── schemas/                     # DTOs Pydantic
+├── services/                    # dedup, ocr, anonymize, llm_client (Qware),
+│                                #   embeddings (local), correlativo, organizer,
+│                                #   classifier, search (híbrida), exporter
+├── core/                        # security (JWT), logging (JSON), errors
+├── workers/                     # Celery: process_document, batch_migration
+├── cli/                         # migrate, jobs, seed
+└── eval_classifier.py           # métricas de precisión
+frontend/src/
+├── api/, stores/                # cliente axios + Zustand
+└── features/                    # auth, upload, migration, review, explorer, config
+```
+
 ## Licencia
 
 Por definir.

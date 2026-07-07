@@ -57,10 +57,10 @@ def ubicar_clasificado(
 def reubicar(vieja: str | None, *, hash_sha256: str, anio: int, area: str, tipo: str, correlativo: str, asunto: str | None) -> Path:
     """Elimina el hardlink viejo y crea el nuevo (al corregir clasificación)."""
     if vieja:
-        try:
+        import contextlib
+
+        with contextlib.suppress(OSError):
             Path(vieja).unlink(missing_ok=True)
-        except OSError:
-            pass
     return ubicar_clasificado(
         hash_sha256, anio=anio, area=area, tipo=tipo, correlativo=correlativo, asunto=asunto
     )

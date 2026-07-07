@@ -108,7 +108,11 @@ async def client(session_factory, monkeypatch):
 
 
 @pytest_asyncio.fixture
-async def auth_headers(client):
+async def client_login_tokens(client):
     resp = await client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin"})
-    token = resp.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    return resp.json()
+
+
+@pytest_asyncio.fixture
+async def auth_headers(client_login_tokens):
+    return {"Authorization": f"Bearer {client_login_tokens['access_token']}"}

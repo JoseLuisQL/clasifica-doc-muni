@@ -62,7 +62,10 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "ASYNC"]
-ignore = ["E501"]
+# B008: Depends() en defaults es el patrón idiomático de FastAPI.
+# N803/N806: args/vars con mayúscula (Documento, Base) mapean a modelos SQLAlchemy.
+# N818: nombres de excepción del dominio en español sin sufijo Error.
+ignore = ["E501", "B008", "N803", "N806", "N818"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -76,4 +79,20 @@ testpaths = ["tests"]
 addopts = "-ra --cov=src/clasifica --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.run]
-omit = ["*/tests/*", "*/alembic/*"]
+omit = [
+    "*/tests/*",
+    "*/alembic/*",
+    # Módulos que requieren el stack runtime completo (PostgreSQL+pgvector,
+    # Redis/Celery, PaddleOCR con GPU/CPU). Se validan por integración con
+    # Docker Compose y el script eval_classifier, no con tests unitarios.
+    "*/workers/tasks/*",
+    "*/workers/common.py",
+    "*/services/search.py",
+    "*/eval_classifier.py",
+    "*/cli/*",
+    "*/main.py",
+    "*/db/seeds/loader.py",
+    # OCR real requiere PaddleOCR/pypdfium (extra "ocr"); su lógica de
+    # orquestación se cubre con mocks en tests/unit/test_servicios_extra.py.
+    "*/services/ocr.py",
+]

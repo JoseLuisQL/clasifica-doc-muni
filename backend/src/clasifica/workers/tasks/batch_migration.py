@@ -5,8 +5,8 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from clasifica.services.dedup import hash_file
 from clasifica.services import organizer
+from clasifica.services.dedup import hash_file
 from clasifica.workers.celery_app import celery_app
 from clasifica.workers.common import SyncSession, registrar_evento
 
@@ -52,7 +52,7 @@ def batch_migration(self, job_id: str) -> dict:
                 process_document.apply_async(args=[str(doc.id)], queue="batch")
                 job.procesados += 1
                 session.commit()
-            except Exception as exc:  # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 job.erroneos += 1
                 session.commit()
 
