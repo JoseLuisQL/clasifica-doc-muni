@@ -1,0 +1,79 @@
+[project]
+name = "clasifica-doc-muni"
+version = "0.1.0"
+description = "Clasificación automática de documentos PDF escaneados para municipalidades distritales del Perú"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    "celery[redis]>=5.4",
+    "redis>=5.2",
+    "httpx>=0.28",
+    "pdfplumber>=0.11",
+    "pillow>=11.0",
+    "pypdfium2>=4.30",
+    "sentence-transformers>=3.3",
+    "pgvector>=0.3.6",
+    "python-jose[cryptography]>=3.3",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.17",
+    "pyyaml>=6.0",
+    "python-slugify>=8.0",
+    "websockets>=14.0",
+]
+
+[project.optional-dependencies]
+ocr = [
+    "paddlepaddle>=2.6",
+    "paddleocr>=2.9",
+    "opencv-python-headless>=4.10",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "pytest-httpserver>=1.1",
+    "testcontainers[postgres,redis]>=4.8",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "types-python-slugify",
+    "types-pyyaml",
+]
+
+[project.scripts]
+clasifica = "clasifica.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "ASYNC"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+warn_unused_ignores = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --cov=src/clasifica --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+omit = ["*/tests/*", "*/alembic/*"]
