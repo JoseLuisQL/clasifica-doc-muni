@@ -21,6 +21,9 @@ dependencies = [
     "pgvector>=0.3.6",
     "python-jose[cryptography]>=3.3",
     "passlib[bcrypt]>=1.7.4",
+    # passlib 1.7.4 usa bcrypt.__about__ (eliminado en bcrypt>=4.1). Pin para
+    # que el hash/verificación de contraseñas no falle en runtime y en seed.
+    "bcrypt>=4.0,<4.1",
     "python-multipart>=0.0.17",
     "pyyaml>=6.0",
     "python-slugify>=8.0",

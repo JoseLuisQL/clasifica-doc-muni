@@ -31,7 +31,8 @@ backend/data/
 # Modelos de embeddings descargados
 *.bin
 *.safetensors
-models/
+/models/
+backend/models/
 
 # IDE
 .vscode/
