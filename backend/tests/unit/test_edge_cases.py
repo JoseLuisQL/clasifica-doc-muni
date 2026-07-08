@@ -1,5 +1,4 @@
 """Tests de edge cases (T095): PDF vacío, texto nativo, postprocesado del classifier."""
-import pytest
 
 from clasifica.services.classifier import _postprocesar
 from clasifica.services.llm_client import ClasificacionLLM

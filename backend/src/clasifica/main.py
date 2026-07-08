@@ -28,8 +28,11 @@ def create_app() -> FastAPI:
 
     api_prefix = "/api/v1"
     app.include_router(auth.router, prefix=api_prefix)
-    app.include_router(documents.router, prefix=api_prefix)
+    # search debe registrarse ANTES que documents: el router de documents
+    # define /documents/{documento_id} (conversión a UUID), que de lo contrario
+    # capturaría /documents/search ("search" no es UUID → 422).
     app.include_router(search.router, prefix=api_prefix)
+    app.include_router(documents.router, prefix=api_prefix)
     app.include_router(migration.router, prefix=api_prefix)
     app.include_router(exports.router, prefix=api_prefix)
     app.include_router(config.router, prefix=api_prefix)

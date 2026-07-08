@@ -1,11 +1,9 @@
 """Tests unitarios adicionales para subir cobertura de lógica pura (T102)."""
-import uuid
 
 import pytest
 
 from clasifica.services import organizer
 from clasifica.services.dedup import hash_file
-from clasifica.services.ocr import ResultadoOCR
 
 
 def test_hash_file(tmp_path):

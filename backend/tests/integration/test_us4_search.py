@@ -4,7 +4,6 @@ import uuid
 import zipfile
 
 import pytest
-from sqlalchemy import select
 
 from clasifica.services.exporter import exportar_zip
 
