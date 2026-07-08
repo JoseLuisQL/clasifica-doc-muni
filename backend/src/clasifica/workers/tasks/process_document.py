@@ -10,7 +10,6 @@ from clasifica.config import settings
 from clasifica.services import embeddings as emb_svc
 from clasifica.services import organizer
 from clasifica.services.classifier import clasificar_pdf
-from clasifica.services.correlativo import render_correlativo
 from clasifica.workers.celery_app import celery_app
 from clasifica.workers.common import SyncSession, publicar_progreso, registrar_evento
 
@@ -115,31 +114,16 @@ def process_document(self, documento_id: str, job_id: str | None = None) -> dict
             publicar_progreso(documento_id, {"estado": "revision", "confianza": res.llm.confianza})
             return {"estado": "revision"}
 
-        # Asignar correlativo atómico (sync SELECT FOR UPDATE)
-        from clasifica.db.models import SecuenciaCorrelativo
+        # Asignar correlativo atómico (INSERT ... ON CONFLICT, libre de races)
+        from clasifica.services.correlativo import siguiente_correlativo_sync
 
         plantilla = cfg_corr.plantilla if cfg_corr else "{SEQ:04d}-{AREA}-{ANIO}-{TIPO}"
-        seq_row = session.execute(
-            select(SecuenciaCorrelativo)
-            .where(
-                SecuenciaCorrelativo.area_codigo == doc.area_codigo,
-                SecuenciaCorrelativo.anio == doc.anio_documento,
-                SecuenciaCorrelativo.tipo_codigo == doc.tipo_codigo,
-            )
-            .with_for_update()
-        ).scalar_one_or_none()
-        if seq_row is None:
-            seq_row = SecuenciaCorrelativo(
-                area_codigo=doc.area_codigo, anio=doc.anio_documento,
-                tipo_codigo=doc.tipo_codigo, ultimo_valor=1,
-            )
-            session.add(seq_row)
-        else:
-            seq_row.ultimo_valor += 1
-        session.flush()
-        doc.correlativo = render_correlativo(
-            plantilla, seq=seq_row.ultimo_valor, area=doc.area_codigo,
-            anio=doc.anio_documento, tipo=doc.tipo_codigo,
+        doc.correlativo = siguiente_correlativo_sync(
+            session,
+            area=doc.area_codigo,
+            anio=doc.anio_documento,
+            tipo=doc.tipo_codigo,
+            plantilla=plantilla,
         )
         registrar_evento(session, doc.id, "correlativo_asignado", {"correlativo": doc.correlativo})
 

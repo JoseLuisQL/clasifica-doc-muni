@@ -3,14 +3,18 @@
 El correlativo usa la secuencia AL INICIO por defecto:
     {SEQ:04d}-{AREA}-{ANIO}-{TIPO}  ->  0001-GDE-2026-INF
 
-La asignación de la secuencia es atómica vía SELECT ... FOR UPDATE sobre
-la tabla secuencias_correlativo (garantiza cero colisiones concurrentes).
+La asignación de la secuencia es atómica vía ``INSERT ... ON CONFLICT
+DO UPDATE ... RETURNING`` (PostgreSQL) — libre de race conditions incluso
+cuando dos workers procesan en paralelo documentos con la misma
+(área, año, tipo) que aún no tiene fila en ``secuencias_correlativo``.
+El ``SELECT ... FOR UPDATE`` anterior no protegía el caso en que la fila
+no existe (ambos workers ven None → ambos INSERT → UniqueViolation).
 """
 from __future__ import annotations
 
 import re
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from clasifica.db.models import SecuenciaCorrelativo
@@ -55,6 +59,36 @@ async def siguiente_correlativo(
         row.ultimo_valor += 1
     await session.flush()
     return render_correlativo(plantilla, seq=row.ultimo_valor, area=area, anio=anio, tipo=tipo)
+
+
+def siguiente_correlativo_sync(
+    session,
+    *,
+    area: str,
+    anio: int,
+    tipo: str,
+    plantilla: str = "{SEQ:04d}-{AREA}-{ANIO}-{TIPO}",
+) -> str:
+    """Asigna el siguiente correlativo de forma atómica (sesión síncrona, worker).
+
+    Usa ``INSERT ... ON CONFLICT DO UPDATE ... RETURNING`` para que la
+    creación+incremento de la secuencia sea una sola operación atómica a
+    nivel de fila, evitando el race condition TOCTOU del patrón
+    SELECT-then-INSERT cuando dos workers procesan en paralelo documentos
+    con la misma (área, año, tipo) que aún no tiene fila.
+    """
+    sql = text(
+        """
+        INSERT INTO secuencias_correlativo (area_codigo, anio, tipo_codigo, ultimo_valor)
+        VALUES (:area, :anio, :tipo, 1)
+        ON CONFLICT (area_codigo, anio, tipo_codigo)
+        DO UPDATE SET ultimo_valor = secuencias_correlativo.ultimo_valor + 1
+        RETURNING ultimo_valor
+        """
+    )
+    result = session.execute(sql, {"area": area, "anio": anio, "tipo": tipo})
+    nuevo_seq = result.scalar_one()
+    return render_correlativo(plantilla, seq=nuevo_seq, area=area, anio=anio, tipo=tipo)
 
 
 def slugify_asunto(asunto: str | None, max_len: int = 60) -> str:
