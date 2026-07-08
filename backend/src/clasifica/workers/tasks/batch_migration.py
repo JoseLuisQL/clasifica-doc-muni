@@ -49,7 +49,7 @@ def batch_migration(self, job_id: str) -> dict:
                 session.flush()
                 registrar_evento(session, doc.id, "cargado", {"origen": "migracion", "job": job_id})
                 session.commit()
-                process_document.apply_async(args=[str(doc.id)], queue="batch")
+                process_document.apply_async(args=[str(doc.id), job_id], queue="batch")
                 job.procesados += 1
                 session.commit()
             except Exception:  # noqa: BLE001

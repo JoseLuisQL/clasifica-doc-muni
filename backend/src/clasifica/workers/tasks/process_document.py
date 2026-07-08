@@ -29,8 +29,30 @@ def _taxonomia(session) -> tuple[list[dict], list[dict]]:
     return areas, tipos
 
 
+def _contabilizar_job(session, job_id: str | None, outcome: str) -> None:
+    """Actualiza contadores de un JobMigracion según el resultado del documento.
+
+    Sin esto, los contadores exitosos/en_revision/erroneos del job nunca se
+    incrementaban (la clasificación ocurre acá, no en batch_migration) y la UI
+    de migración mostraba siempre ok=0 / rev=0.
+    """
+    if not job_id:
+        return
+    from clasifica.db.models import JobMigracion
+
+    job = session.get(JobMigracion, uuid.UUID(job_id))
+    if job is None:
+        return
+    if outcome == "exitoso":
+        job.exitosos += 1
+    elif outcome == "revision":
+        job.en_revision += 1
+    elif outcome == "error":
+        job.erroneos += 1
+
+
 @celery_app.task(name="clasifica.process_document", bind=True, max_retries=3)
-def process_document(self, documento_id: str) -> dict:
+def process_document(self, documento_id: str, job_id: str | None = None) -> dict:
     from clasifica.db.models import (
         ConfiguracionAnonimizacion,
         ConfiguracionCorrelativo,
@@ -64,6 +86,7 @@ def process_document(self, documento_id: str) -> dict:
         except Exception as exc:  # noqa: BLE001
             doc.estado = "error"
             registrar_evento(session, doc.id, "error", {"detalle": str(exc)[:500]})
+            _contabilizar_job(session, job_id, "error")
             session.commit()
             publicar_progreso(documento_id, {"estado": "error", "detalle": str(exc)[:200]})
             return {"estado": "error"}
@@ -87,6 +110,7 @@ def process_document(self, documento_id: str) -> dict:
         if res.requiere_revision:
             doc.estado = "revision"
             registrar_evento(session, doc.id, "revision", {"confianza": res.llm.confianza})
+            _contabilizar_job(session, job_id, "revision")
             session.commit()
             publicar_progreso(documento_id, {"estado": "revision", "confianza": res.llm.confianza})
             return {"estado": "revision"}
@@ -142,6 +166,7 @@ def process_document(self, documento_id: str) -> dict:
         doc.estado = "clasificado"
         doc.procesado_en = datetime.now(UTC)
         registrar_evento(session, doc.id, "clasificado", {"correlativo": doc.correlativo})
+        _contabilizar_job(session, job_id, "exitoso")
         session.commit()
         publicar_progreso(documento_id, {
             "estado": "clasificado", "correlativo": doc.correlativo,
