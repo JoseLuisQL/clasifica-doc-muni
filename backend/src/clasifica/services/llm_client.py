@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 
 import httpx
@@ -59,6 +60,33 @@ class ClasificacionLLM:
 
 class LLMError(Exception):
     pass
+
+
+_FENCE_RE = re.compile(r"^\s*```(?:json|JSON)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
+
+
+def _parse_json_content(content: str | None) -> dict:
+    """Parsea el JSON devuelto por el LLM, tolerante a fences de markdown.
+
+    Algunos proveedores OpenAI-compatible (incluido Qware) envuelven el JSON
+    en bloques ```json ... ``` aunque se pida response_format json_schema, o
+    devuelven texto extra alrededor. Esto extrae y parsea el JSON de forma
+    robusta para no fallar con 'Expecting value: line 1 column 1 (char 0)'.
+    """
+    if not content:
+        raise ValueError("respuesta LLM vacía")
+    txt = content.strip()
+    # 1) Fence completo: ```json\n{...}\n```
+    m = _FENCE_RE.match(txt)
+    if m:
+        txt = m.group(1).strip()
+    # 2) Si aún hay fence parcial o texto extra, tomar el primer bloque {...}
+    if not txt.startswith("{"):
+        start = txt.find("{")
+        end = txt.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            txt = txt[start : end + 1]
+    return json.loads(txt)
 
 
 class LLMClient:
@@ -142,10 +170,10 @@ class LLMClient:
                         raise LLMError(f"HTTP {resp.status_code}: {resp.text[:200]}")
                     data = resp.json()
                     content = data["choices"][0]["message"]["content"]
-                    parsed = json.loads(content)
+                    parsed = _parse_json_content(content)
                     usage = data.get("usage", {})
                     return self._to_result(parsed, usage, latency)
-                except (httpx.HTTPError, LLMError, KeyError, json.JSONDecodeError) as exc:
+                except (httpx.HTTPError, LLMError, KeyError, ValueError) as exc:
                     last_exc = exc
                     if attempt < self.max_retries - 1:
                         await asyncio.sleep(min(2**attempt * 2, 60))
@@ -153,7 +181,7 @@ class LLMClient:
 
     @staticmethod
     def _to_result(parsed: dict, usage: dict, latency: int) -> ClasificacionLLM:
-        tipo = str(parsed.get("tipo_documento", "OTRO")).upper()
+        tipo = str(parsed.get("tipo_documento") or parsed.get("tipo") or "OTRO").upper()
         return ClasificacionLLM(
             tipo_documento=tipo,
             area=str(parsed.get("area", "")),
